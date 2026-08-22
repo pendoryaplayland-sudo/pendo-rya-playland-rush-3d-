@@ -498,95 +498,98 @@ if(i%3===0){
 // buildPlaylandTheme();
 
 
-// ===================== V12 APPROVED ASSET ENVIRONMENT =====================
+
+
+// ===================== V12.2 STATIC ASSET ENVIRONMENT =====================
 const assetTexLoader=new THREE.TextureLoader();
-const assetObjects=[];
+const staticAssets=[];
+const movingFloorAssets=[];
 
 function tex(url){
-  const t=assetTexLoader.load(url);
+  const t=assetTexLoader.load(
+    url,
+    undefined,
+    undefined,
+    err=>console.warn('Asset yüklenemedi:',url,err)
+  );
   if('colorSpace' in t)t.colorSpace=THREE.SRGBColorSpace;
   return t;
 }
 
 const AT={
-  entrance:tex('public/assets/playland_entrance.jpg'),
-  shops:tex('public/assets/storefronts.jpg'),
-  rails:tex('public/assets/railings.jpg'),
-  floor:tex('public/assets/floor_wood.jpg'),
-  ceiling:tex('public/assets/ceiling.jpg'),
-  plants:tex('public/assets/plants.jpg'),
-  interiors:tex('public/assets/interiors.jpg'),
-  lights:tex('public/assets/lights.jpg'),
-  brand:tex('public/assets/brand.jpg')
+  entrance:tex('/assets/playland_entrance.jpg'),
+  shops:tex('/assets/storefronts.jpg'),
+  rails:tex('/assets/railings.jpg'),
+  floor:tex('/assets/floor_wood.jpg'),
+  ceiling:tex('/assets/ceiling.jpg'),
+  plants:tex('/assets/plants.jpg'),
+  interiors:tex('/assets/interiors.jpg'),
+  lights:tex('/assets/lights.jpg'),
+  brand:tex('/assets/brand.jpg')
 };
 
-function planeAsset(texture,w,h,x,y,z,rotY=0,emissive=.0){
-  const mat=new THREE.MeshStandardMaterial({
+function staticPlane(texture,w,h,x,y,z,rotY=0){
+  const mat=new THREE.MeshBasicMaterial({
     map:texture,
-    roughness:.42,
-    metalness:.02,
-    side:THREE.DoubleSide,
-    emissive:0xffffff,
-    emissiveIntensity:emissive
+    side:THREE.DoubleSide
   });
   const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
   p.position.set(x,y,z);
   p.rotation.y=rotY;
   scene.add(p);
-  assetObjects.push(p);
+  staticAssets.push(p);
   return p;
 }
 
-function addApprovedEnvironment(){
-  // Premium wood running corridor.
-  for(let i=0;i<32;i++){
-    const z=-8-i*6.15;
+function floorTile(z){
+  const mat=new THREE.MeshStandardMaterial({
+    map:AT.floor,
+    roughness:.62,
+    metalness:.01
+  });
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(6.2,6.0),mat);
+  floor.rotation.x=-Math.PI/2;
+  floor.position.set(0,.012,z);
+  scene.add(floor);
+  movingFloorAssets.push(floor);
+}
 
-    const floor=new THREE.Mesh(
-      new THREE.PlaneGeometry(6.0,6.2),
-      new THREE.MeshStandardMaterial({map:AT.floor,roughness:.55,metalness:.03})
-    );
-    floor.rotation.x=-Math.PI/2;
-    floor.position.set(0,.015,z);
-    scene.add(floor); assetObjects.push(floor);
-
-    // storefronts left/right
-    if(i%2===0){
-      planeAsset(AT.shops,5.0,2.8,-4.5,1.55,z,-Math.PI/2,.08);
-      planeAsset(AT.shops,5.0,2.8, 4.5,1.55,z, Math.PI/2,.08);
-    }
-
-    // branded rail panels
-    if(i%3===0){
-      planeAsset(AT.rails,2.35,1.0,-3.67,.72,z+.5,-Math.PI/2,.08);
-      planeAsset(AT.rails,2.35,1.0, 3.67,.72,z+.5, Math.PI/2,.08);
-    }
-
-    // interior arcade glimpses and plants
-    if(i%6===2){
-      planeAsset(AT.interiors,3.1,1.8,-4.18,2.35,z+.3,-Math.PI/2,.1);
-      planeAsset(AT.plants,1.45,1.45,3.65,1.05,z-.3,0,.02);
-    }
-
-    // ceiling panels
-    if(i%3===0){
-      const c=planeAsset(AT.ceiling,7.8,3.2,0,4.75,z,0,.03);
-      c.rotation.x=Math.PI/2;
-    }
-
-    // vertical light/decor panel
-    if(i%5===1){
-      planeAsset(AT.lights,.95,2.0,-3.35,2.55,z+.5,0,.18);
-      planeAsset(AT.brand,1.25,.7,3.30,2.55,z+.5,0,.18);
-    }
+function addStaticEnvironment(){
+  // Only floor tiles move with the runner.
+  for(let i=0;i<34;i++){
+    floorTile(-6-i*5.9);
   }
 
-  // Main entrance appears repeatedly and gets progressively larger.
-  planeAsset(AT.entrance,8.0,5.35,0,2.65,-48,0,.16);
-  planeAsset(AT.entrance,9.5,6.35,0,3.0,-98,0,.20);
-  planeAsset(AT.entrance,11.0,7.35,0,3.45,-152,0,.24);
+  // Fixed storefront walls: far to each side and never cross the track.
+  const wallZ=[-18,-36,-54,-72,-90,-108,-126,-144,-162];
+  wallZ.forEach((z,i)=>{
+    staticPlane(AT.shops,5.2,2.8,-5.0,1.6,z,-Math.PI/2);
+    staticPlane(AT.shops,5.2,2.8, 5.0,1.6,z, Math.PI/2);
+
+    staticPlane(AT.rails,2.0,.85,-3.95,.67,z+.8,-Math.PI/2);
+    staticPlane(AT.rails,2.0,.85, 3.95,.67,z+.8, Math.PI/2);
+
+    if(i%3===1){
+      staticPlane(AT.interiors,2.25,1.35,-4.55,2.25,z+1.0,-Math.PI/2);
+      staticPlane(AT.plants,1.0,1.0,3.55,.95,z+.6,0);
+    }
+
+    if(i%4===2){
+      staticPlane(AT.brand,1.1,.66,-3.45,2.45,z+.5,0);
+      staticPlane(AT.lights,.7,1.35,3.45,2.25,z+.5,0);
+    }
+  });
+
+  // Fixed ceiling image segments, high enough to never intersect camera.
+  for(const z of [-28,-58,-88,-118,-148]){
+    const c=staticPlane(AT.ceiling,7.5,2.25,0,5.3,z,0);
+    c.rotation.x=Math.PI/2;
+  }
+
+  // One distant Playland entrance. It remains static.
+  staticPlane(AT.entrance,8.8,5.9,0,2.95,-155,0);
 }
-addApprovedEnvironment();
+addStaticEnvironment();
 
 const loader=new GLTFLoader();
 
@@ -1067,13 +1070,9 @@ function loop(t){
     if(m.position.z>9)m.position.z-=182;
   }
 
-  for(const m of themeMoving){
-    m.position.z+=speed*dt;
-    if(m.position.z>12)m.position.z-=196;
-  }
-  for(const m of assetObjects){
-    m.position.z+=speed*dt;
-    if(m.position.z>12)m.position.z-=198;
+  for(const f of movingFloorAssets){
+    f.position.z+=speed*dt;
+    if(f.position.z>8)f.position.z-=200;
   }
 
   for(let i=objects.length-1;i>=0;i--){
