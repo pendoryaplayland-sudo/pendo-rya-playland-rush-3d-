@@ -494,7 +494,99 @@ if(i%3===0){
   addPlaylandPortal(-108);
 }
 
-buildPlaylandTheme();
+// V12 uses approved image assets instead of procedural theme
+// buildPlaylandTheme();
+
+
+// ===================== V12 APPROVED ASSET ENVIRONMENT =====================
+const assetTexLoader=new THREE.TextureLoader();
+const assetObjects=[];
+
+function tex(url){
+  const t=assetTexLoader.load(url);
+  if('colorSpace' in t)t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+
+const AT={
+  entrance:tex('public/assets/playland_entrance.jpg'),
+  shops:tex('public/assets/storefronts.jpg'),
+  rails:tex('public/assets/railings.jpg'),
+  floor:tex('public/assets/floor_wood.jpg'),
+  ceiling:tex('public/assets/ceiling.jpg'),
+  plants:tex('public/assets/plants.jpg'),
+  interiors:tex('public/assets/interiors.jpg'),
+  lights:tex('public/assets/lights.jpg'),
+  brand:tex('public/assets/brand.jpg')
+};
+
+function planeAsset(texture,w,h,x,y,z,rotY=0,emissive=.0){
+  const mat=new THREE.MeshStandardMaterial({
+    map:texture,
+    roughness:.42,
+    metalness:.02,
+    side:THREE.DoubleSide,
+    emissive:0xffffff,
+    emissiveIntensity:emissive
+  });
+  const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
+  p.position.set(x,y,z);
+  p.rotation.y=rotY;
+  scene.add(p);
+  assetObjects.push(p);
+  return p;
+}
+
+function addApprovedEnvironment(){
+  // Premium wood running corridor.
+  for(let i=0;i<32;i++){
+    const z=-8-i*6.15;
+
+    const floor=new THREE.Mesh(
+      new THREE.PlaneGeometry(6.0,6.2),
+      new THREE.MeshStandardMaterial({map:AT.floor,roughness:.55,metalness:.03})
+    );
+    floor.rotation.x=-Math.PI/2;
+    floor.position.set(0,.015,z);
+    scene.add(floor); assetObjects.push(floor);
+
+    // storefronts left/right
+    if(i%2===0){
+      planeAsset(AT.shops,5.0,2.8,-4.5,1.55,z,-Math.PI/2,.08);
+      planeAsset(AT.shops,5.0,2.8, 4.5,1.55,z, Math.PI/2,.08);
+    }
+
+    // branded rail panels
+    if(i%3===0){
+      planeAsset(AT.rails,2.35,1.0,-3.67,.72,z+.5,-Math.PI/2,.08);
+      planeAsset(AT.rails,2.35,1.0, 3.67,.72,z+.5, Math.PI/2,.08);
+    }
+
+    // interior arcade glimpses and plants
+    if(i%6===2){
+      planeAsset(AT.interiors,3.1,1.8,-4.18,2.35,z+.3,-Math.PI/2,.1);
+      planeAsset(AT.plants,1.45,1.45,3.65,1.05,z-.3,0,.02);
+    }
+
+    // ceiling panels
+    if(i%3===0){
+      const c=planeAsset(AT.ceiling,7.8,3.2,0,4.75,z,0,.03);
+      c.rotation.x=Math.PI/2;
+    }
+
+    // vertical light/decor panel
+    if(i%5===1){
+      planeAsset(AT.lights,.95,2.0,-3.35,2.55,z+.5,0,.18);
+      planeAsset(AT.brand,1.25,.7,3.30,2.55,z+.5,0,.18);
+    }
+  }
+
+  // Main entrance appears repeatedly and gets progressively larger.
+  planeAsset(AT.entrance,8.0,5.35,0,2.65,-48,0,.16);
+  planeAsset(AT.entrance,9.5,6.35,0,3.0,-98,0,.20);
+  planeAsset(AT.entrance,11.0,7.35,0,3.45,-152,0,.24);
+}
+addApprovedEnvironment();
 
 const loader=new GLTFLoader();
 
@@ -517,6 +609,15 @@ function normalizeModel(root){
     if(o.isMesh){
       o.castShadow=true;
       o.receiveShadow=true;
+      const mats=Array.isArray(o.material)?o.material:[o.material];
+      mats.forEach(mat=>{
+        if(!mat || !mat.color || mat.map)return;
+        const avg=(mat.color.r+mat.color.g+mat.color.b)/3;
+        if(avg>.72)mat.color.setHex(0xf7f9ff);
+        else if(avg>.40)mat.color.setHex(0x248cff);
+        else mat.color.setHex(0x153b8f);
+        mat.needsUpdate=true;
+      });
     }
   });
 
@@ -969,6 +1070,10 @@ function loop(t){
   for(const m of themeMoving){
     m.position.z+=speed*dt;
     if(m.position.z>12)m.position.z-=196;
+  }
+  for(const m of assetObjects){
+    m.position.z+=speed*dt;
+    if(m.position.z>12)m.position.z-=198;
   }
 
   for(let i=objects.length-1;i>=0;i--){
