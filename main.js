@@ -35,6 +35,7 @@ const M=(c,e=0)=>new THREE.MeshStandardMaterial({
 const lanes=[-1.55,0,1.55];
 const moving=[];
 const objects=[];
+const themeMoving=[];
 const effects=[];
 
 for(let i=0;i<26;i++){
@@ -72,6 +73,180 @@ for(let i=0;i<26;i++){
     moving.push(shop);
   }
 }
+
+
+function addPlaylandSign(label,z,y=3.35,scale=1){
+  const group=new THREE.Group();
+
+  const back=new THREE.Mesh(
+    new THREE.BoxGeometry(4.6*scale,1.15*scale,.22),
+    M(0xff2f9c,.18)
+  );
+  group.add(back);
+
+  const inner=new THREE.Mesh(
+    new THREE.BoxGeometry(4.15*scale,.78*scale,.25),
+    M(0x24c8ff,.15)
+  );
+  inner.position.z=.13;
+  group.add(inner);
+
+  // glowing letter-like blocks to evoke PLAYLAND without texture/font dependencies
+  for(let i=0;i<8;i++){
+    const b=new THREE.Mesh(
+      new THREE.BoxGeometry(.34*scale,.44*scale,.12),
+      M(i%2===0?0xffef43:0xffffff,.08)
+    );
+    b.position.set((-1.55+i*.44)*scale,0,.29);
+    group.add(b);
+  }
+
+  group.position.set(0,y,z);
+  scene.add(group);
+  themeMoving.push(group);
+}
+
+function addArcadeMachine(x,z,colorA,colorB){
+  const g=new THREE.Group();
+
+  const body=new THREE.Mesh(
+    new THREE.BoxGeometry(1.05,1.85,.75),
+    M(colorA,.28)
+  );
+  body.position.y=.93;
+  g.add(body);
+
+  const screen=new THREE.Mesh(
+    new THREE.BoxGeometry(.72,.55,.08),
+    M(colorB,.05)
+  );
+  screen.position.set(0,1.18,.415);
+  g.add(screen);
+
+  const deck=new THREE.Mesh(
+    new THREE.BoxGeometry(.78,.18,.48),
+    M(0xffef43,.18)
+  );
+  deck.position.set(0,.72,.42);
+  deck.rotation.x=-.22;
+  g.add(deck);
+
+  const stick=new THREE.Mesh(
+    new THREE.CylinderGeometry(.05,.05,.28,12),
+    M(0xffffff,.2)
+  );
+  stick.position.set(-.18,.88,.57);
+  g.add(stick);
+
+  const knob=new THREE.Mesh(
+    new THREE.SphereGeometry(.09,12,12),
+    M(0xff4d45,.15)
+  );
+  knob.position.set(-.18,1.02,.57);
+  g.add(knob);
+
+  g.position.set(x,0,z);
+  scene.add(g);
+  themeMoving.push(g);
+}
+
+function addBalloon(x,z,color){
+  const g=new THREE.Group();
+  const balloon=new THREE.Mesh(
+    new THREE.SphereGeometry(.28,16,16),
+    M(color,.12)
+  );
+  balloon.scale.y=1.2;
+  balloon.position.y=2.6;
+  g.add(balloon);
+
+  const string=new THREE.Mesh(
+    new THREE.CylinderGeometry(.008,.008,1.5,6),
+    M(0xffffff,.65)
+  );
+  string.position.y=1.72;
+  g.add(string);
+
+  g.position.set(x,0,z);
+  scene.add(g);
+  themeMoving.push(g);
+}
+
+function addStarDecor(x,z,color=0xffef43){
+  const s=new THREE.Mesh(
+    new THREE.OctahedronGeometry(.22),
+    M(color,.16)
+  );
+  s.position.set(x,2.65,z);
+  scene.add(s);
+  themeMoving.push(s);
+}
+
+function buildPlaylandTheme(){
+  // Mall -> approach -> arcade -> Playland goal
+  addPlaylandSign('PLAYLAND',-38,3.5,.95);
+  addPlaylandSign('PLAYLAND',-82,3.7,1.05);
+  addPlaylandSign('PLAYLAND',-132,3.9,1.15);
+
+  const arcadeZ=[-24,-32,-50,-58,-72,-92,-106,-120,-144,-160];
+  arcadeZ.forEach((z,i)=>{
+    addArcadeMachine(-4.15,z,i%2===0?0xff2f9c:0x24c8ff,i%2===0?0x24c8ff:0xffef43);
+    addArcadeMachine( 4.15,z,i%2===0?0x24c8ff:0xff2f9c,i%2===0?0xffef43:0x24c8ff);
+  });
+
+  for(let z=-18,i=0;z>-174;z-=13,i++){
+    addBalloon(-3.45,z,i%3===0?0xff2f9c:(i%3===1?0x24c8ff:0xffef43));
+    addBalloon( 3.45,z,i%3===0?0x24c8ff:(i%3===1?0xffef43:0xff2f9c));
+    addStarDecor(-2.65,z-4,i%2===0?0xffef43:0xffffff);
+    addStarDecor( 2.65,z-7,i%2===0?0xffffff:0xffef43);
+  }
+
+  // Large final Playland portal
+  const gate=new THREE.Group();
+
+  const left=new THREE.Mesh(
+    new THREE.BoxGeometry(1.1,5.2,1.0),
+    M(0xff2f9c,.16)
+  );
+  left.position.set(-3.25,2.6,0);
+  gate.add(left);
+
+  const right=new THREE.Mesh(
+    new THREE.BoxGeometry(1.1,5.2,1.0),
+    M(0x24c8ff,.16)
+  );
+  right.position.set(3.25,2.6,0);
+  gate.add(right);
+
+  const top=new THREE.Mesh(
+    new THREE.BoxGeometry(7.6,1.15,1.0),
+    M(0xffef43,.14)
+  );
+  top.position.set(0,5.05,0);
+  gate.add(top);
+
+  const signBack=new THREE.Mesh(
+    new THREE.BoxGeometry(5.4,1.05,.35),
+    M(0xff2f9c,.12)
+  );
+  signBack.position.set(0,5.15,.65);
+  gate.add(signBack);
+
+  for(let i=0;i<8;i++){
+    const b=new THREE.Mesh(
+      new THREE.BoxGeometry(.4,.5,.16),
+      M(i%2===0?0xffffff:0x24c8ff,.06)
+    );
+    b.position.set(-1.72+i*.49,5.15,.9);
+    gate.add(b);
+  }
+
+  gate.position.set(0,0,-178);
+  scene.add(gate);
+  themeMoving.push(gate);
+}
+
+buildPlaylandTheme();
 
 const loader=new GLTFLoader();
 
@@ -116,6 +291,88 @@ function normalizeModel(root){
   // Pendo'nun sırtını kameraya döndür:
   // artık parkurun içine doğru koşuyor.
   root.rotation.y=Math.PI;
+}
+
+
+// --- Pendo & Rya arcade audio (Web Audio, no external sound files) ---
+let audioCtx=null;
+let masterGain=null;
+let musicTimer=null;
+let musicStep=0;
+
+function initAudio(){
+  if(audioCtx){
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    return;
+  }
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return;
+  audioCtx=new AC();
+  masterGain=audioCtx.createGain();
+  masterGain.gain.value=.20;
+  masterGain.connect(audioCtx.destination);
+}
+
+function tone(freq,dur=.10,type='sine',vol=.12,delay=0){
+  if(!audioCtx||!masterGain)return;
+  const now=audioCtx.currentTime+delay;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.type=type;
+  osc.frequency.setValueAtTime(freq,now);
+  gain.gain.setValueAtTime(.0001,now);
+  gain.gain.exponentialRampToValueAtTime(Math.max(.001,vol),now+.01);
+  gain.gain.exponentialRampToValueAtTime(.0001,now+dur);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start(now);
+  osc.stop(now+dur+.03);
+}
+
+function sfx(kind){
+  initAudio();
+  if(kind==='coin'){
+    tone(880,.07,'square',.09);
+    tone(1320,.09,'square',.07,.055);
+  }else if(kind==='star'){
+    tone(660,.07,'sine',.10);
+    tone(990,.08,'sine',.09,.055);
+    tone(1320,.10,'sine',.08,.11);
+  }else if(kind==='jump'){
+    tone(330,.08,'square',.07);
+    tone(520,.10,'square',.07,.06);
+  }else if(kind==='slide'){
+    tone(220,.10,'sawtooth',.045);
+    tone(150,.13,'sawtooth',.035,.05);
+  }else if(kind==='hit'){
+    tone(115,.18,'sawtooth',.14);
+    tone(75,.20,'square',.08,.03);
+  }else if(kind==='bonus'){
+    [523,659,784,1047].forEach((f,i)=>tone(f,.13,'sine',.10,i*.09));
+  }else if(kind==='start'){
+    [392,523,659].forEach((f,i)=>tone(f,.11,'square',.07,i*.07));
+  }else if(kind==='gameover'){
+    [330,262,196,147].forEach((f,i)=>tone(f,.18,'triangle',.09,i*.12));
+  }
+}
+
+function startMusic(){
+  initAudio();
+  if(musicTimer)return;
+  const notes=[262,330,392,523,392,330,294,392,494,587,494,392];
+  musicTimer=setInterval(()=>{
+    if(!running||!audioCtx)return;
+    const f=notes[musicStep++%notes.length];
+    tone(f,.11,'triangle',.022);
+    if(musicStep%4===0)tone(f/2,.08,'square',.012);
+  },220);
+}
+
+function stopMusic(){
+  if(musicTimer){
+    clearInterval(musicTimer);
+    musicTimer=null;
+  }
 }
 
 function loadMotion(kind){
@@ -299,12 +556,17 @@ function start(){
   $('controls').classList.remove('hidden');
 
   running=true;
+  initAudio();
+  sfx('start');
+  startMusic();
   last=performance.now();
   requestAnimationFrame(loop);
 }
 
 function end(){
   running=false;
+  stopMusic();
+  sfx('gameover');
 
   best=Math.max(best,Math.floor(score));
   localStorage.setItem('pr-v3-best',best);
@@ -328,6 +590,7 @@ function jump(){
     vy=8.4;
     onGround=false;
     loadMotion('jump');
+    sfx('jump');
   }
 }
 
@@ -335,6 +598,7 @@ function slide(){
   if(onGround&&slideT<=0){
     slideT=.7;
     loadMotion('slide');
+    sfx('slide');
   }
 }
 
@@ -454,6 +718,12 @@ function loop(t){
     if(m.position.z>9)m.position.z-=182;
   }
 
+  for(const m of themeMoving){
+    m.position.z+=speed*dt;
+    if(m.position.z>12)m.position.z-=196;
+    if(m.rotation)m.rotation.y+=0.0008*dt;
+  }
+
   for(let i=objects.length-1;i>=0;i--){
     const o=objects[i];
 
@@ -468,14 +738,17 @@ function loop(t){
       if(o.userData.type==='coin'){
         coins++;
         score+=10;
+        sfx('coin');
         burstAt(o.position,0xffc928,7);
         haptic(12);
       }else if(o.userData.type==='star'){
         if(!missionDone){
           mission=Math.min(25,mission+1);
+          sfx('star');
           if(mission>=25){
             missionDone=true;
             score+=250;
+            sfx('bonus');
             burstAt(o.position,0xffef43,22);
             haptic(45);
           }else{
@@ -496,6 +769,7 @@ function loop(t){
         haptic(18);
       }else{
         lives--;
+        sfx('hit');
         invincible=1.05;
         vy=4.2;
         flashPlayer();
