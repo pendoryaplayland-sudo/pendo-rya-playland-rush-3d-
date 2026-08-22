@@ -32,7 +32,7 @@ const M=(c,e=0)=>new THREE.MeshStandardMaterial({
   emissiveIntensity:e
 });
 
-const lanes=[-2.45,0,2.45];
+const lanes=[-1.55,0,1.55];
 const moving=[];
 const objects=[];
 
@@ -101,7 +101,7 @@ function normalizeModel(root){
   const h=Math.max(.001,size.y);
 
   // Karakteri önceki sürüme göre yaklaşık %40 küçült.
-  const s=1.75/h;
+  const s=1.50/h;
   root.scale.setScalar(s);
 
   const box2=new THREE.Box3().setFromObject(root);
