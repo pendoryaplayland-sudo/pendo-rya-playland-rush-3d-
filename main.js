@@ -123,7 +123,7 @@ function addNeonRail(side,z){
   const rail=new THREE.Group();
 
   const glass=new THREE.Mesh(
-    new THREE.BoxGeometry(.14,1.05,7.2),
+    new THREE.BoxGeometry(.07,.88,7.2),
     new THREE.MeshStandardMaterial({
       color:0xa9ecff,
       transparent:true,
@@ -132,21 +132,21 @@ function addNeonRail(side,z){
       metalness:.05
     })
   );
-  glass.position.set(side*4.18,.68,0);
+  glass.position.set(side*4.05,.62,0);
   rail.add(glass);
 
   const neon=new THREE.Mesh(
-    new THREE.BoxGeometry(.08,.08,7.2),
+    new THREE.BoxGeometry(.045,.045,7.2),
     M(side<0?0x19c9ff:0xff34b4,1.4)
   );
-  neon.position.set(side*4.04,1.2,0);
+  neon.position.set(side*4.01,1.08,0);
   rail.add(neon);
 
   const base=new THREE.Mesh(
-    new THREE.BoxGeometry(.22,.18,7.2),
+    new THREE.BoxGeometry(.12,.12,7.2),
     M(0x31548e,.1)
   );
-  base.position.set(side*4.15,.12,0);
+  base.position.set(side*4.03,.09,0);
   rail.add(base);
 
   rail.position.z=z;
@@ -154,43 +154,73 @@ function addNeonRail(side,z){
   themeMoving.push(rail);
 }
 
+
 function addShopFront(side,z,i){
   const g=new THREE.Group();
+  const sx=side*5.08;
 
-  const frame=new THREE.Mesh(
-    new THREE.BoxGeometry(1.1,3.65,5.6),
-    M(i%2===0?0xf7f2e8:0xeceaf7,.03)
+  const wall=new THREE.Mesh(
+    new THREE.BoxGeometry(.55,3.75,5.9),
+    new THREE.MeshStandardMaterial({
+      color:i%2===0?0xf0ece7:0xe6e9ef,
+      roughness:.44
+    })
   );
-  frame.position.set(side*5.18,1.82,0);
-  g.add(frame);
+  wall.position.set(sx,1.88,0);
+  g.add(wall);
 
-  const windowMat=new THREE.MeshStandardMaterial({
-    color:i%2===0?0x6ee2ff:0xff7bcf,
-    transparent:true,
-    opacity:.36,
-    roughness:.08,
-    metalness:.08,
-    emissive:i%2===0?0x1ecaff:0xff2fa7,
-    emissiveIntensity:.15
-  });
+  const frameMat=M(0x263b63,.08);
+  for(const dz of [-2.25,0,2.25]){
+    const frame=new THREE.Mesh(new THREE.BoxGeometry(.10,2.65,.09),frameMat);
+    frame.position.set(side*4.77,1.65,dz);
+    g.add(frame);
+  }
 
-  const win=new THREE.Mesh(new THREE.BoxGeometry(.14,2.35,4.65),windowMat);
-  win.position.set(side*4.62,1.7,0);
-  g.add(win);
-
-  const sign=new THREE.Mesh(
-    new THREE.BoxGeometry(.16,.55,2.5),
-    M(i%3===0?0x18c8ff:(i%3===1?0xff32b4:0xffdd39),.65)
+  const glass=new THREE.Mesh(
+    new THREE.BoxGeometry(.08,2.6,4.65),
+    new THREE.MeshPhysicalMaterial({
+      color:i%2===0?0xbdefff:0xffc7e9,
+      transparent:true,
+      opacity:.26,
+      roughness:.05,
+      metalness:.02,
+      transmission:.3,
+      clearcoat:.7
+    })
   );
-  sign.position.set(side*4.48,3.03,-.55);
-  g.add(sign);
+  glass.position.set(side*4.72,1.65,0);
+  g.add(glass);
 
-  const light1=new THREE.Mesh(
-    new THREE.BoxGeometry(.12,.08,4.4),
-    M(0xffffff,.7)
+  // lit merchandise plinths behind the window
+  for(const dz of [-1.55,0,1.55]){
+    const plinth=new THREE.Mesh(
+      new THREE.BoxGeometry(.42,.48,.82),
+      M(i%3===0?0x22cfff:(i%3===1?0xff47b9:0xffdf48),.22)
+    );
+    plinth.position.set(side*4.95,.48,dz);
+    g.add(plinth);
+
+    const obj=new THREE.Mesh(
+      new THREE.SphereGeometry(.17,12,12),
+      M(i%2===0?0xffffff:0xffdf48,.35)
+    );
+    obj.position.set(side*4.82,.88,dz);
+    g.add(obj);
+  }
+
+  const signBack=new THREE.Mesh(
+    new THREE.BoxGeometry(.12,.55,2.65),
+    M(i%3===0?0x1bcbff:(i%3===1?0xff3eae:0xffd93e),.52)
   );
-  light1.position.set(side*4.42,2.58,0);
-  g.add(light1);
+  signBack.position.set(side*4.64,3.1,-.5);
+  g.add(signBack);
+
+  const light=new THREE.Mesh(
+    new THREE.BoxGeometry(.10,.055,4.55),
+    M(0xffffff,.82)
+  );
+  light.position.set(side*4.62,2.68,0);
+  g.add(light);
 
   g.position.z=z;
   scene.add(g);
@@ -288,55 +318,103 @@ function addBanner(side,z,isRya=false){
 function addPlaylandPortal(z){
   const g=new THREE.Group();
 
-  const left=new THREE.Mesh(new THREE.CylinderGeometry(.3,.38,5.0,16),M(0xff2fa9,.72));
-  left.position.set(-3.35,2.5,0);
+  const left=new THREE.Mesh(new THREE.CylinderGeometry(.36,.46,5.6,16),M(0xff2fa9,.72));
+  left.position.set(-3.45,2.8,0);
   g.add(left);
 
-  const right=new THREE.Mesh(new THREE.CylinderGeometry(.3,.38,5.0,16),M(0x16c9ff,.72));
-  right.position.set(3.35,2.5,0);
+  const right=new THREE.Mesh(new THREE.CylinderGeometry(.36,.46,5.6,16),M(0x16c9ff,.72));
+  right.position.set(3.45,2.8,0);
   g.add(right);
 
   const arch=new THREE.Mesh(
-    new THREE.TorusGeometry(3.35,.27,12,42,Math.PI),
+    new THREE.TorusGeometry(3.45,.32,12,42,Math.PI),
     M(0xffd83d,.85)
   );
   arch.rotation.z=Math.PI;
-  arch.position.y=4.75;
+  arch.position.y=5.25;
   g.add(arch);
 
   const glow=new THREE.Mesh(
     new THREE.BoxGeometry(6.25,.12,.22),
     M(0xffffff,1.15)
   );
-  glow.position.set(0,4.72,.15);
+  glow.position.set(0,5.18,.15);
   g.add(glow);
 
   g.position.z=z;
   scene.add(g);
   themeMoving.push(g);
 
-  makeTextSprite('PLAYLAND','PENDORYA AVM',z+.55,4.05,.86);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',z+.58,4.45,1.02);
 }
+
 
 function addFloorGlow(z){
   const g=new THREE.Group();
 
-  for(const x of [-1.55,0,1.55]){
-    const line=new THREE.Mesh(
-      new THREE.BoxGeometry(.055,.018,7.0),
-      M(x===0?0xffffff:(x<0?0x1bcaff:0xff36b3),.78)
+  // warm mall floor panels
+  const base=new THREE.Mesh(
+    new THREE.BoxGeometry(5.5,.035,7.15),
+    new THREE.MeshStandardMaterial({
+      color:0xd6b18b,
+      roughness:.58,
+      metalness:.02
+    })
+  );
+  base.position.y=.005;
+  g.add(base);
+
+  // subtle tile joints
+  for(const x of [-2.7,-1.35,0,1.35,2.7]){
+    const joint=new THREE.Mesh(
+      new THREE.BoxGeometry(.018,.01,7.15),
+      M(0xffffff,.02)
     );
-    line.position.set(x,.025,0);
+    joint.position.set(x,.03,0);
+    g.add(joint);
+  }
+
+  // lane guidance kept elegant and thin
+  for(const [x,c] of [[-1.55,0x4fdcff],[1.55,0xff55bd]]){
+    const line=new THREE.Mesh(
+      new THREE.BoxGeometry(.035,.018,7.0),
+      M(c,.35)
+    );
+    line.position.set(x,.038,0);
     g.add(line);
   }
 
-  const edgeL=new THREE.Mesh(new THREE.BoxGeometry(.07,.02,7.0),M(0x1bcaff,.95));
-  edgeL.position.set(-2.58,.03,0);
-  g.add(edgeL);
+  // soft center guide
+  const center=new THREE.Mesh(
+    new THREE.BoxGeometry(.025,.012,7.0),
+    M(0xffffff,.22)
+  );
+  center.position.set(0,.036,0);
+  g.add(center);
 
-  const edgeR=new THREE.Mesh(new THREE.BoxGeometry(.07,.02,7.0),M(0xff36b3,.95));
-  edgeR.position.set(2.58,.03,0);
-  g.add(edgeR);
+  g.position.z=z;
+  scene.add(g);
+  themeMoving.push(g);
+}
+
+function addCeilingLights(z){
+  const g=new THREE.Group();
+
+  const bar=new THREE.Mesh(
+    new THREE.BoxGeometry(6.8,.05,.12),
+    M(0xffffff,.9)
+  );
+  bar.position.y=4.85;
+  g.add(bar);
+
+  for(const x of [-2.7,-1.35,0,1.35,2.7]){
+    const lamp=new THREE.Mesh(
+      new THREE.BoxGeometry(.32,.055,.22),
+      M(0xfff1cf,.72)
+    );
+    lamp.position.set(x,4.83,0);
+    g.add(lamp);
+  }
 
   g.position.z=z;
   scene.add(g);
@@ -359,8 +437,8 @@ function buildPlaylandTheme(){
       addPalm(-1,z-2.4);
       addPalm(1,z-2.4);
     }
-    if(i%3===0){
-      addCeilingArc(z-3.1,i);
+if(i%3===0){
+      addCeilingLights(z-2.0);
     }
     if(i%5===1){
       addBanner(-1,z-1.8,false);
@@ -369,8 +447,8 @@ function buildPlaylandTheme(){
   }
 
   makeTextSprite('PLAYLAND','PENDORYA AVM',-46,3.72,.72);
-  makeTextSprite('PLAYLAND','PENDORYA AVM',-104,3.82,.78);
-  addPlaylandPortal(-174);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',-92,3.82,.92);
+  addPlaylandPortal(-138);
 }
 
 buildPlaylandTheme();
