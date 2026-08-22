@@ -315,39 +315,46 @@ function addBanner(side,z,isRya=false){
   themeMoving.push(g);
 }
 
+
 function addPlaylandPortal(z){
   const g=new THREE.Group();
 
-  const left=new THREE.Mesh(new THREE.CylinderGeometry(.36,.46,5.6,16),M(0xff2fa9,.72));
-  left.position.set(-3.45,2.8,0);
-  g.add(left);
+  const colMatL=new THREE.MeshStandardMaterial({color:0xff2fa9,emissive:0xff168e,emissiveIntensity:.75,roughness:.22});
+  const colMatR=new THREE.MeshStandardMaterial({color:0x18caff,emissive:0x0aaee8,emissiveIntensity:.75,roughness:.22});
 
-  const right=new THREE.Mesh(new THREE.CylinderGeometry(.36,.46,5.6,16),M(0x16c9ff,.72));
-  right.position.set(3.45,2.8,0);
-  g.add(right);
+  const left=new THREE.Mesh(new THREE.BoxGeometry(.72,5.7,.72),colMatL);
+  left.position.set(-3.45,2.85,0); g.add(left);
 
-  const arch=new THREE.Mesh(
-    new THREE.TorusGeometry(3.45,.32,12,42,Math.PI),
-    M(0xffd83d,.85)
+  const right=new THREE.Mesh(new THREE.BoxGeometry(.72,5.7,.72),colMatR);
+  right.position.set(3.45,2.85,0); g.add(right);
+
+  const canopy=new THREE.Mesh(
+    new THREE.BoxGeometry(7.55,.58,1.08),
+    new THREE.MeshStandardMaterial({color:0x173b8f,emissive:0x102c78,emissiveIntensity:.45,roughness:.2,metalness:.18})
   );
-  arch.rotation.z=Math.PI;
-  arch.position.y=5.25;
-  g.add(arch);
+  canopy.position.set(0,5.35,0); g.add(canopy);
 
-  const glow=new THREE.Mesh(
-    new THREE.BoxGeometry(6.25,.12,.22),
-    M(0xffffff,1.15)
+  const cyan=new THREE.Mesh(new THREE.BoxGeometry(7.2,.075,1.14),M(0x25d8ff,1.15));
+  cyan.position.set(0,5.65,.02); g.add(cyan);
+  const pink=new THREE.Mesh(new THREE.BoxGeometry(7.2,.075,1.14),M(0xff3bb8,1.05));
+  pink.position.set(0,5.04,.02); g.add(pink);
+
+  for(const x of [-2.7,2.7]){
+    const s=new THREE.Mesh(new THREE.OctahedronGeometry(.34),M(0xffe33f,.95));
+    s.position.set(x,5.35,.7); g.add(s);
+  }
+
+  const opening=new THREE.Mesh(
+    new THREE.PlaneGeometry(5.9,4.35),
+    new THREE.MeshBasicMaterial({color:0xe7fbff,transparent:true,opacity:.30,side:THREE.DoubleSide})
   );
-  glow.position.set(0,5.18,.15);
-  g.add(glow);
+  opening.position.set(0,2.6,-.42); g.add(opening);
 
   g.position.z=z;
   scene.add(g);
   themeMoving.push(g);
-
-  makeTextSprite('PLAYLAND','PENDORYA AVM',z+.58,4.45,1.02);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',z+.62,4.48,1.08);
 }
-
 
 function addFloorGlow(z){
   const g=new THREE.Group();
@@ -421,11 +428,46 @@ function addCeilingLights(z){
   themeMoving.push(g);
 }
 
+
+function addMallArchitecture(z,i){
+  const g=new THREE.Group();
+  for(const side of [-1,1]){
+    const soffit=new THREE.Mesh(
+      new THREE.BoxGeometry(1.45,.20,7.05),
+      new THREE.MeshStandardMaterial({color:0xf0efed,roughness:.5})
+    );
+    soffit.position.set(side*4.72,4.72,0); g.add(soffit);
+
+    const upperGlass=new THREE.Mesh(
+      new THREE.BoxGeometry(.055,1.0,7.0),
+      new THREE.MeshPhysicalMaterial({color:0xb5edff,transparent:true,opacity:.17,roughness:.04,transmission:.35})
+    );
+    upperGlass.position.set(side*4.02,3.92,0); g.add(upperGlass);
+  }
+  for(const x of [-2.5,0,2.5]){
+    const lamp=new THREE.Mesh(new THREE.BoxGeometry(1.0,.035,.42),M(0xffefc8,.8));
+    lamp.position.set(x,4.61,0); g.add(lamp);
+  }
+  g.position.z=z; scene.add(g); themeMoving.push(g);
+}
+
+function addMallBench(side,z){
+  const g=new THREE.Group();
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(1.15,.16,.52),M(0xa66f43,.02));
+  seat.position.set(side*3.42,.48,0); g.add(seat);
+  for(const dz of [-.34,.34]){
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(.08,.42,.08),M(0x34445e,.02));
+    leg.position.set(side*3.42,.22,dz); g.add(leg);
+  }
+  g.position.z=z; scene.add(g); themeMoving.push(g);
+}
+
 function buildPlaylandTheme(){
   // Clean premium mall corridor based on the approved Pendo & Rya reference art.
   for(let i=0;i<25;i++){
     const z=-10-i*7.2;
     addFloorGlow(z);
+    addMallArchitecture(z,i);
     addNeonRail(-1,z);
     addNeonRail(1,z);
 
@@ -436,6 +478,7 @@ function buildPlaylandTheme(){
     if(i%4===0){
       addPalm(-1,z-2.4);
       addPalm(1,z-2.4);
+      addMallBench(i%8===0?-1:1,z-4.0);
     }
 if(i%3===0){
       addCeilingLights(z-2.0);
@@ -446,9 +489,9 @@ if(i%3===0){
     }
   }
 
-  makeTextSprite('PLAYLAND','PENDORYA AVM',-46,3.72,.72);
-  makeTextSprite('PLAYLAND','PENDORYA AVM',-92,3.82,.92);
-  addPlaylandPortal(-138);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',-32,3.82,.94);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',-68,4.0,1.02);
+  addPlaylandPortal(-108);
 }
 
 buildPlaylandTheme();
