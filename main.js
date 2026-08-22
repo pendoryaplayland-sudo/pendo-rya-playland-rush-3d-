@@ -46,12 +46,12 @@ const GLB={
 let player=new THREE.Group(), mixer=null, action=null, current='run';
 player.position.z=1.7; scene.add(player);
 
-function normalizeModel(root){
+function normalizeModel(root)root.rotation.y=Math.PI;{
   root.traverse(o=>{ if(o.isMesh){o.castShadow=true;o.receiveShadow=true;} });
   const box=new THREE.Box3().setFromObject(root);
   const size=box.getSize(new THREE.Vector3());
   const h=Math.max(.001,size.y);
-  const s=2.8/h;
+  const s=1.75/h;
   root.scale.setScalar(s);
   box.setFromObject(root);
   const center=box.getCenter(new THREE.Vector3());
