@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Pendo & Rya – Playland Run</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#071126;font-family:Arial,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block}
+#ui{position:fixed;inset:0;pointer-events:none}
+.hud{position:absolute;top:max(8px,env(safe-area-inset-top));left:8px;right:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;color:#fff;font-weight:900;font-size:13px;text-shadow:0 2px 5px #000}
+.pill{background:#0b2b6ed9;border:2px solid #ffffff50;border-radius:14px;padding:7px 4px;text-align:center}
+.mission{position:absolute;top:58px;left:50%;transform:translateX(-50%);background:#6c2de2dd;color:#fff;border:2px solid #fff7;border-radius:16px;padding:6px 10px;font-weight:900;font-size:13px;white-space:nowrap}
+.controls{position:absolute;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:10px;pointer-events:auto}
+.b{width:64px;height:64px;border-radius:20px;border:3px solid #fff9;background:#14357fe8;color:#fff;font-size:24px;font-weight:900}
+.jump{background:#ff4ca5e8}.slide{background:#7d4bffe8}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(#06102ae8,#32135fe8);padding:22px;pointer-events:auto;color:#fff;text-align:center}
+.card{width:min(440px,92vw);background:#10265ff2;border:3px solid #ffffff55;border-radius:28px;padding:24px}
+.title{font-size:34px;font-weight:1000;line-height:1.05}.sub{opacity:.92;line-height:1.42}
+.chars{display:flex;gap:12px;margin:15px 0}.char{flex:1;border:3px solid transparent;border-radius:20px;padding:14px;background:#091844;color:#fff;font-weight:900}.char.sel{border-color:#ffd84d}
+.play{width:100%;border:0;border-radius:18px;padding:16px;background:#ffd84d;color:#17204d;font-size:21px;font-weight:900}.hidden{display:none}.hint{font-size:12px;opacity:.8;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="ui">
+ <div class="hud"><div class="pill">⭐ <span id="score">0</span></div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">❤️ <span id="life">3</span></div><div class="pill">🏆 <span id="best">0</span></div></div>
+ <div class="mission">GÖREV: 25 yıldız · <span id="missionN">0</span>/25</div>
+ <div id="controls" class="controls hidden"><button id="left" class="b">◀</button><button id="jump" class="b jump">↑</button><button id="slide" class="b slide">↓</button><button id="right" class="b">▶</button></div>
+ <div id="start" class="overlay"><div class="card"><div class="title"><span style="color:#4ec8ff">Pendo</span> & <span style="color:#ff72bd">Rya</span><br>PLAYLAND RUN</div><p class="sub">3D endless runner. Sağa/sola kaydır, yukarı zıpla, aşağı kay.</p><div class="chars"><button id="pendo" class="char sel">🧢 PENDO</button><button id="rya" class="char">🎀 RYA</button></div><button id="go" class="play">KOŞUYA BAŞLA 🚀</button><div class="hint">iPhone Safari · Swipe kontrolleri</div></div></div>
+ <div id="over" class="overlay hidden"><div class="card"><div class="title">KOŞU BİTTİ 🎉</div><h2>⭐ <span id="final">0</span></h2><p>Rekor: <span id="finalBest">0</span></p><button id="again" class="play">TEKRAR KOŞ</button></div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{const $=id=>document.getElementById(id),scene=new THREE.Scene();scene.fog=new THREE.Fog(0x071229,20,95);
+const cam=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,180);cam.position.set(0,5.4,9.7);cam.lookAt(0,1.6,-12);
+const r=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});r.setPixelRatio(Math.min(2,devicePixelRatio||1));r.setSize(innerWidth,innerHeight);document.body.prepend(r.domElement);
+scene.add(new THREE.HemisphereLight(0xc9efff,0x242238,2.8));const dl=new THREE.DirectionalLight(0xffffff,2);dl.position.set(5,10,6);scene.add(dl);
+const M=(c,e=0)=>new THREE.MeshStandardMaterial({color:c,roughness:.48,emissive:e?c:0,emissiveIntensity:e}),lanes=[-2.4,0,2.4];
+for(let i=0;i<22;i++){const f=new THREE.Mesh(new THREE.BoxGeometry(10,.28,8),M(i%2?0x253a7d:0x1c2e67));f.position.set(0,-.14,-i*8);scene.add(f);for(const x of [-4.8,4.8]){const w=new THREE.Mesh(new THREE.BoxGeometry(.2,3.8,8),M(i%2?0xff4db8:0x007bff,1.1));w.position.set(x,1.9,-i*8);scene.add(w)}}
+let hero='pendo',player,running=0,last=0,score=0,coins=0,lives=3,lane=0,targetX=0,vy=0,onGround=1,slideT=0,speed=16,spawn=0,mission=0,dist=0;const objs=[];
+function mesh(g,c){return new THREE.Mesh(g,M(c))}
+function makeHero(who){const g=new THREE.Group(),P=who==='pendo',main=P?0x007bff:0xff4db8,skin=0xffd4b6,hair=P?0x0876d8:0xff2f9c;
+let body=mesh(new THREE.CapsuleGeometry(.48,.75,4,10),main);body.position.y=1.2;g.add(body);let head=mesh(new THREE.SphereGeometry(.62,20,16),skin);head.position.y=2.2;g.add(head);
+if(P){let h=mesh(new THREE.SphereGeometry(.62,20,12,0,Math.PI*2,0,Math.PI*.56),hair);h.position.y=2.42;g.add(h);let cap=mesh(new THREE.CylinderGeometry(.47,.56,.18,20),0xffffff);cap.position.y=2.72;g.add(cap)}
+else{let crown=mesh(new THREE.SphereGeometry(.61,20,14),hair);crown.scale.set(1,.72,.9);crown.position.y=2.46;g.add(crown);for(const sx of [-1,1]){let p=mesh(new THREE.SphereGeometry(.36,16,12),hair);p.scale.set(.8,1.35,.8);p.position.set(.68*sx,2.42,0);g.add(p)}}
+for(const ex of [-.2,.2]){let e=mesh(new THREE.SphereGeometry(.06,10,8),0x111111);e.position.set(ex,2.22,.58);g.add(e)}
+const arms=[],legs=[];for(const sx of [-1,1]){let a=new THREE.Group();a.position.set(.48*sx,1.45,0);let am=mesh(new THREE.CapsuleGeometry(.11,.55,3,8),skin);am.position.y=-.32;a.add(am);g.add(a);arms.push(a);let l=new THREE.Group();l.position.set(.22*sx,.8,0);let lm=mesh(new THREE.CapsuleGeometry(.14,.55,3,8),P?0x145eb6:skin);lm.position.y=-.4;l.add(lm);let sh=mesh(new THREE.BoxGeometry(.38,.19,.58),main);sh.position.set(0,-.72,.15);l.add(sh);g.add(l);legs.push(l)}
+g.userData={arms,legs,baseScale:.86};g.scale.setScalar(.86);g.position.z=1.7;return g}
+function swap(){if(player)scene.remove(player);player=makeHero(hero);scene.add(player);player.position.x=targetX}swap();
+function addObj(){let type=Math.random()<.7?'coin':'barrier',o;if(type==='coin'){o=mesh(new THREE.TorusGeometry(.24,.08,8,16),0xffd83d);o.rotation.x=Math.PI/2;o.position.set(lanes[(Math.random()*3)|0],1.2,-72-Math.random()*20)}else{o=mesh(new THREE.BoxGeometry(1.35,1.5,1.1),0xff654e);o.position.set(lanes[(Math.random()*3)|0],.75,-74-Math.random()*20)}o.userData={type};scene.add(o);objs.push(o)}
+function upd(){$('score').textContent=Math.floor(score);$('coins').textContent=coins;$('life').textContent=lives;$('missionN').textContent=mission;$('best').textContent=+(localStorage.getItem('prBest')||0)}
+function reset(){score=coins=mission=dist=0;lives=3;lane=0;targetX=0;vy=0;onGround=1;slideT=0;speed=16;spawn=0;objs.forEach(o=>scene.remove(o));objs.length=0;player.position.set(0,0,1.7);upd()}
+function start(){reset();$('start').classList.add('hidden');$('over').classList.add('hidden');$('controls').classList.remove('hidden');running=1;last=performance.now();requestAnimationFrame(loop)}
+$('go').onclick=start;$('again').onclick=start;$('pendo').onclick=()=>{hero='pendo';$('pendo').classList.add('sel');$('rya').classList.remove('sel');swap()};$('rya').onclick=()=>{hero='rya';$('rya').classList.add('sel');$('pendo').classList.remove('sel');swap()};
+function move(d){lane=Math.max(-1,Math.min(1,lane+d));targetX=lane*2.4}function jump(){if(onGround&&slideT<=0){vy=8;onGround=0}}function slide(){if(onGround){slideT=.7;player.scale.y=.48}}
+$('left').onpointerdown=e=>{e.preventDefault();move(-1)};$('right').onpointerdown=e=>{e.preventDefault();move(1)};$('jump').onpointerdown=e=>{e.preventDefault();jump()};$('slide').onpointerdown=e=>{e.preventDefault();slide()};
+let sx=0,sy=0;addEventListener('touchstart',e=>{let t=e.changedTouches[0];sx=t.clientX;sy=t.clientY},{passive:true});addEventListener('touchend',e=>{let t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<35)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():slide()},{passive:true});
+function end(){running=0;$('controls').classList.add('hidden');let b=+(localStorage.getItem('prBest')||0);if(score>b){b=Math.floor(score);localStorage.setItem('prBest',b)}$('final').textContent=Math.floor(score);$('finalBest').textContent=b;$('over').classList.remove('hidden')}
+function hit(o){return Math.abs(player.position.x-o.position.x)<.85&&Math.abs(player.position.y-o.position.y)<1.15&&Math.abs(player.position.z-o.position.z)<.95}
+function loop(t){if(!running)return;let dt=Math.min(.033,(t-last)/1000);last=t;dist+=speed*dt;speed=Math.min(30,16+dist/240);score+=dt*speed;spawn-=dt;if(spawn<=0){addObj();spawn=.45+Math.random()*.4}
+player.position.x+=(targetX-player.position.x)*Math.min(1,dt*12);vy-=19*dt;player.position.y+=vy*dt;if(player.position.y<=0){player.position.y=0;vy=0;onGround=1}slideT-=dt;if(slideT<=0)player.scale.y+=(player.userData.baseScale-player.scale.y)*Math.min(1,dt*12);
+let ph=t*.018;player.userData.arms[0].rotation.x=Math.sin(ph)*.75;player.userData.arms[1].rotation.x=-Math.sin(ph)*.75;player.userData.legs[0].rotation.x=-Math.sin(ph)*.8;player.userData.legs[1].rotation.x=Math.sin(ph)*.8;
+for(let i=objs.length-1;i>=0;i--){let o=objs[i];o.position.z+=speed*dt;if(o.userData.type==='coin')o.rotation.y+=dt*3;if(hit(o)){if(o.userData.type==='coin'){coins++;mission++;score+=10}else{lives--;vy=4}scene.remove(o);objs.splice(i,1);upd();if(lives<=0){end();return}}else if(o.position.z>10){scene.remove(o);objs.splice(i,1)}}
+upd();r.render(scene,cam);requestAnimationFrame(loop)}
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight)});upd();r.render(scene,cam)})();
+</script>
+</body></html>
