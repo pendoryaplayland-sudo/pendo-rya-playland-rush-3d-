@@ -11,27 +11,22 @@
   <div id="game"></div>
 
   <div id="hud" class="hud hidden">
-    <div>⭐ <span id="score">0</span></div>
-    <div>🪙 <span id="coins">0</span></div>
-    <div>❤️ <span id="lives">3</span></div>
-    <div>🏆 <span id="best">0</span></div>
+    <div>⭐ <span id="score">0</span></div><div>🪙 <span id="coins">0</span></div>
+    <div>❤️ <span id="lives">3</span></div><div>🏆 <span id="best">0</span></div>
   </div>
 
   <div id="mission" class="mission hidden">GÖREV: 25 yıldız · <span id="missionCount">0</span>/25</div>
 
   <div id="controls" class="controls hidden">
-    <button id="left">◀</button>
-    <button id="jump" class="jump">↑</button>
-    <button id="slide" class="slide">↓</button>
-    <button id="right">▶</button>
+    <button id="left">◀</button><button id="jump" class="jump">↑</button>
+    <button id="slide" class="slide">↓</button><button id="right">▶</button>
   </div>
 
   <section id="menu" class="menu">
     <div class="hero-card">
       <img src="cover.png" alt="Pendo & Rya Playland Run" class="cover">
       <div class="menu-panel">
-        <h1><span>Pendo</span> & <b>Rya</b></h1>
-        <h2>PLAYLAND RUN</h2>
+        <h1><span>Pendo</span> & <b>Rya</b></h1><h2>PLAYLAND RUN</h2>
         <p>Karakterini seç ve Pendorya Playland'de koşuya başla.</p>
         <div class="character-row">
           <button id="pickPendo" class="character selected">PENDO</button>
@@ -44,21 +39,19 @@
 
   <section id="gameover" class="menu hidden">
     <div class="menu-panel result">
-      <h1>KOŞU BİTTİ</h1>
-      <p>Skorun: <strong id="finalScore">0</strong></p>
+      <h1>KOŞU BİTTİ</h1><p>Skorun: <strong id="finalScore">0</strong></p>
       <button id="restart" class="start">TEKRAR OYNA</button>
     </div>
   </section>
 
- <script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
   }
-}
-</script>
-
-<script type="module" src="main.js"></script> 
+  </script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
