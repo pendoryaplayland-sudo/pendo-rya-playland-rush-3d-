@@ -1,0 +1,21 @@
+
+html,body{margin:0;height:100%;overflow:hidden;background:#07142c;font-family:Arial,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}
+#game{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%}
+.hidden{display:none!important}
+.hud{position:fixed;top:max(8px,env(safe-area-inset-top));left:8px;right:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;z-index:10}
+.hud div{background:#0b2b6ee8;color:white;border:2px solid #ffffff55;border-radius:14px;padding:9px 5px;text-align:center;font-weight:900;box-shadow:0 5px 18px #0004}
+.mission{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:10;background:#692de5e8;color:#fff;border:2px solid #fff6;border-radius:18px;padding:7px 12px;font-weight:900}
+.controls{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:10px;z-index:20}
+.controls button{width:66px;height:66px;border-radius:20px;border:3px solid #fff9;background:#14357fe8;color:#fff;font-size:25px;font-weight:900;box-shadow:0 6px 0 #061630}
+.controls .jump{background:#ff4da7e8}.controls .slide{background:#7b4dffe8}
+.menu{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:linear-gradient(#06102ad9,#2d1262e8);padding:18px}
+.hero-card{width:min(460px,94vw);max-height:94vh;overflow:auto;border-radius:28px;background:#10265ff2;border:3px solid #ffffff55;box-shadow:0 30px 90px #000b}
+.cover{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;object-position:center;border-radius:24px 24px 0 0}
+.menu-panel{padding:20px;text-align:center;color:#fff}
+.menu-panel h1{font-size:38px;margin:0;line-height:1}.menu-panel h1 span{color:#54cfff}.menu-panel h1 b{color:#ff69bb}.menu-panel h2{color:#ffd83d;margin:8px 0 12px}
+.character-row{display:flex;gap:10px;margin:16px 0}
+.character{flex:1;border:3px solid transparent;background:#091844;color:#fff;padding:14px;border-radius:18px;font-weight:900}
+.character.selected{border-color:#ffd84d;box-shadow:0 0 24px #ffd84d66}
+.start{width:100%;border:0;border-radius:18px;padding:16px;font-size:21px;font-weight:900;background:linear-gradient(#90ff3c,#35c900);color:#16324d;box-shadow:0 7px 0 #137600}
+.result{width:min(420px,90vw);background:#10265ff2;border-radius:28px;border:3px solid #ffffff55}
