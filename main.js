@@ -35,6 +35,7 @@ const M=(c,e=0)=>new THREE.MeshStandardMaterial({
 const lanes=[-1.55,0,1.55];
 const moving=[];
 const objects=[];
+const effects=[];
 
 for(let i=0;i<26;i++){
   const z=-i*7;
@@ -172,6 +173,46 @@ let slideT=0;
 let speed=17;
 let spawn=0;
 let distance=0;
+let invincible=0;
+let missionDone=false;
+
+
+function haptic(ms=20){
+  try{
+    if(navigator.vibrate)navigator.vibrate(ms);
+  }catch(e){}
+}
+
+function burstAt(pos,color=0xffffff,count=8){
+  for(let i=0;i<count;i++){
+    const p=new THREE.Mesh(
+      new THREE.SphereGeometry(.055,8,8),
+      M(color,.45)
+    );
+    p.position.copy(pos);
+    p.userData.life=.45+Math.random()*.25;
+    p.userData.vx=(Math.random()-.5)*3.6;
+    p.userData.vy=1.8+Math.random()*2.8;
+    p.userData.vz=(Math.random()-.5)*2.4;
+    scene.add(p);
+    effects.push(p);
+  }
+}
+
+function flashPlayer(){
+  player.traverse(o=>{
+    if(o.isMesh&&o.material){
+      const mats=Array.isArray(o.material)?o.material:[o.material];
+      mats.forEach(mat=>{
+        if('emissiveIntensity' in mat){
+          const old=mat.emissiveIntensity||0;
+          mat.emissiveIntensity=1.2;
+          setTimeout(()=>{ mat.emissiveIntensity=old; },120);
+        }
+      });
+    }
+  });
+}
 
 function spawnObject(){
   const q=Math.random();
@@ -237,8 +278,11 @@ function reset(){
   speed=17;
   spawn=0;
   distance=0;
+  invincible=0;
+  missionDone=false;
 
   objects.splice(0).forEach(o=>scene.remove(o));
+  effects.splice(0).forEach(o=>scene.remove(o));
 
   player.position.set(0,0,1.7);
   loadMotion('run');
@@ -295,6 +339,7 @@ function slide(){
 }
 
 function coll(o){
+  if(invincible>0&&o.userData.type==='barrier')return false;
   return (
     Math.abs(player.position.x-o.position.x)<.82 &&
     Math.abs(player.position.y-o.position.y)<1.1 &&
@@ -365,6 +410,14 @@ function loop(t){
 
   if(mixer)mixer.update(dt);
 
+  if(invincible>0){
+    invincible=Math.max(0,invincible-dt);
+    player.visible=(Math.floor(invincible*12)%2)===0;
+    if(invincible===0)player.visible=true;
+  }else{
+    player.visible=true;
+  }
+
   distance+=speed*dt;
   speed=Math.min(31,17+distance/250);
   score+=dt*speed;
@@ -373,7 +426,7 @@ function loop(t){
 
   if(spawn<=0){
     spawnObject();
-    spawn=.46+Math.random()*.36;
+    spawn=.58+Math.random()*.40;
   }
 
   player.position.x+=(targetX-player.position.x)*Math.min(1,dt*12);
@@ -407,24 +460,47 @@ function loop(t){
     o.position.z+=speed*dt;
 
     if(o.userData.type==='coin'||o.userData.type==='star'){
-      o.rotation.y+=dt*3;
+      o.rotation.y+=dt*4.5;
+      o.position.y+=Math.sin(t*.006+o.position.z)*dt*.12;
     }
 
     if(coll(o)){
       if(o.userData.type==='coin'){
         coins++;
         score+=10;
+        burstAt(o.position,0xffc928,7);
+        haptic(12);
       }else if(o.userData.type==='star'){
-        mission++;
-        score+=25;
+        if(!missionDone){
+          mission=Math.min(25,mission+1);
+          if(mission>=25){
+            missionDone=true;
+            score+=250;
+            burstAt(o.position,0xffef43,22);
+            haptic(45);
+          }else{
+            score+=25;
+            burstAt(o.position,0xffef43,10);
+            haptic(15);
+          }
+        }else{
+          score+=25;
+          burstAt(o.position,0xffef43,8);
+        }
       }else if(o.userData.type==='ramp'){
         vy=10.2;
         onGround=false;
         loadMotion('jump');
         score+=20;
+        burstAt(o.position,0x52dc38,8);
+        haptic(18);
       }else{
         lives--;
+        invincible=1.05;
         vy=4.2;
+        flashPlayer();
+        burstAt(o.position,0xff4d45,14);
+        haptic(55);
 
         if(lives<=0){
           scene.remove(o);
@@ -439,6 +515,21 @@ function loop(t){
     }else if(o.position.z>10){
       scene.remove(o);
       objects.splice(i,1);
+    }
+  }
+
+  for(let i=effects.length-1;i>=0;i--){
+    const p=effects[i];
+    p.userData.life-=dt;
+    p.position.x+=p.userData.vx*dt;
+    p.position.y+=p.userData.vy*dt;
+    p.position.z+=p.userData.vz*dt;
+    p.userData.vy-=7.5*dt;
+    p.scale.multiplyScalar(.97);
+
+    if(p.userData.life<=0){
+      scene.remove(p);
+      effects.splice(i,1);
     }
   }
 
