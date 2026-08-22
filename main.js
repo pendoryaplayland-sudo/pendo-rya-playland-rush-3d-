@@ -75,175 +75,302 @@ for(let i=0;i<26;i++){
 }
 
 
-function addPlaylandSign(label,z,y=3.35,scale=1){
-  const group=new THREE.Group();
 
-  const back=new THREE.Mesh(
-    new THREE.BoxGeometry(4.6*scale,1.15*scale,.22),
-    M(0xff2f9c,.18)
+function makeTextSprite(textValue,subValue,z,y=3.6,scale=1){
+  const canvas=document.createElement('canvas');
+  canvas.width=1024;
+  canvas.height=320;
+  const ctx=canvas.getContext('2d');
+
+  const g=ctx.createLinearGradient(0,0,1024,0);
+  g.addColorStop(0,'#18c8ff');
+  g.addColorStop(.5,'#ffffff');
+  g.addColorStop(1,'#ff32b4');
+
+  ctx.clearRect(0,0,1024,320);
+  ctx.shadowColor='#153c9a';
+  ctx.shadowBlur=28;
+  ctx.lineWidth=18;
+  ctx.strokeStyle='#143f9a';
+  ctx.textAlign='center';
+  ctx.font='900 118px Arial Rounded MT Bold, Arial, sans-serif';
+  ctx.strokeText(textValue,512,145);
+  ctx.fillStyle=g;
+  ctx.fillText(textValue,512,145);
+
+  ctx.shadowBlur=12;
+  ctx.lineWidth=10;
+  ctx.font='900 46px Arial Rounded MT Bold, Arial, sans-serif';
+  ctx.strokeText(subValue,512,235);
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(subValue,512,235);
+
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+
+  const mat=new THREE.MeshBasicMaterial({
+    map:texture,
+    transparent:true,
+    depthWrite:false
+  });
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(5.9*scale,1.85*scale),mat);
+  plane.position.set(0,y,z);
+  scene.add(plane);
+  themeMoving.push(plane);
+}
+
+function addNeonRail(side,z){
+  const rail=new THREE.Group();
+
+  const glass=new THREE.Mesh(
+    new THREE.BoxGeometry(.14,1.05,7.2),
+    new THREE.MeshStandardMaterial({
+      color:0xa9ecff,
+      transparent:true,
+      opacity:.30,
+      roughness:.08,
+      metalness:.05
+    })
   );
-  group.add(back);
+  glass.position.set(side*4.18,.68,0);
+  rail.add(glass);
 
-  const inner=new THREE.Mesh(
-    new THREE.BoxGeometry(4.15*scale,.78*scale,.25),
-    M(0x24c8ff,.15)
+  const neon=new THREE.Mesh(
+    new THREE.BoxGeometry(.08,.08,7.2),
+    M(side<0?0x19c9ff:0xff34b4,1.4)
   );
-  inner.position.z=.13;
-  group.add(inner);
+  neon.position.set(side*4.04,1.2,0);
+  rail.add(neon);
 
-  // glowing letter-like blocks to evoke PLAYLAND without texture/font dependencies
-  for(let i=0;i<8;i++){
-    const b=new THREE.Mesh(
-      new THREE.BoxGeometry(.34*scale,.44*scale,.12),
-      M(i%2===0?0xffef43:0xffffff,.08)
+  const base=new THREE.Mesh(
+    new THREE.BoxGeometry(.22,.18,7.2),
+    M(0x31548e,.1)
+  );
+  base.position.set(side*4.15,.12,0);
+  rail.add(base);
+
+  rail.position.z=z;
+  scene.add(rail);
+  themeMoving.push(rail);
+}
+
+function addShopFront(side,z,i){
+  const g=new THREE.Group();
+
+  const frame=new THREE.Mesh(
+    new THREE.BoxGeometry(1.1,3.65,5.6),
+    M(i%2===0?0xf7f2e8:0xeceaf7,.03)
+  );
+  frame.position.set(side*5.18,1.82,0);
+  g.add(frame);
+
+  const windowMat=new THREE.MeshStandardMaterial({
+    color:i%2===0?0x6ee2ff:0xff7bcf,
+    transparent:true,
+    opacity:.36,
+    roughness:.08,
+    metalness:.08,
+    emissive:i%2===0?0x1ecaff:0xff2fa7,
+    emissiveIntensity:.15
+  });
+
+  const win=new THREE.Mesh(new THREE.BoxGeometry(.14,2.35,4.65),windowMat);
+  win.position.set(side*4.62,1.7,0);
+  g.add(win);
+
+  const sign=new THREE.Mesh(
+    new THREE.BoxGeometry(.16,.55,2.5),
+    M(i%3===0?0x18c8ff:(i%3===1?0xff32b4:0xffdd39),.65)
+  );
+  sign.position.set(side*4.48,3.03,-.55);
+  g.add(sign);
+
+  const light1=new THREE.Mesh(
+    new THREE.BoxGeometry(.12,.08,4.4),
+    M(0xffffff,.7)
+  );
+  light1.position.set(side*4.42,2.58,0);
+  g.add(light1);
+
+  g.position.z=z;
+  scene.add(g);
+  themeMoving.push(g);
+}
+
+function addPalm(side,z){
+  const g=new THREE.Group();
+  const x=side*3.72;
+
+  const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(.12,.18,2.7,10),
+    M(0x9a6b42,.02)
+  );
+  trunk.position.set(x,1.35,0);
+  g.add(trunk);
+
+  const crownY=2.8;
+  for(let i=0;i<7;i++){
+    const leaf=new THREE.Mesh(
+      new THREE.CapsuleGeometry(.11,.95,4,7),
+      M(0x39b866,.05)
     );
-    b.position.set((-1.55+i*.44)*scale,0,.29);
-    group.add(b);
+    const a=(i/7)*Math.PI*2;
+    leaf.position.set(x+Math.cos(a)*.54,crownY+Math.sin(a*.5)*.12,Math.sin(a)*.54);
+    leaf.rotation.z=Math.PI/2;
+    leaf.rotation.y=-a;
+    leaf.scale.set(1,.7,1);
+    g.add(leaf);
   }
 
-  group.position.set(0,y,z);
-  scene.add(group);
-  themeMoving.push(group);
-}
-
-function addArcadeMachine(x,z,colorA,colorB){
-  const g=new THREE.Group();
-
-  const body=new THREE.Mesh(
-    new THREE.BoxGeometry(1.05,1.85,.75),
-    M(colorA,.28)
+  const planter=new THREE.Mesh(
+    new THREE.CylinderGeometry(.34,.46,.48,12),
+    M(0xeee8df,.02)
   );
-  body.position.y=.93;
-  g.add(body);
+  planter.position.set(x,.24,0);
+  g.add(planter);
 
-  const screen=new THREE.Mesh(
-    new THREE.BoxGeometry(.72,.55,.08),
-    M(colorB,.05)
-  );
-  screen.position.set(0,1.18,.415);
-  g.add(screen);
-
-  const deck=new THREE.Mesh(
-    new THREE.BoxGeometry(.78,.18,.48),
-    M(0xffef43,.18)
-  );
-  deck.position.set(0,.72,.42);
-  deck.rotation.x=-.22;
-  g.add(deck);
-
-  const stick=new THREE.Mesh(
-    new THREE.CylinderGeometry(.05,.05,.28,12),
-    M(0xffffff,.2)
-  );
-  stick.position.set(-.18,.88,.57);
-  g.add(stick);
-
-  const knob=new THREE.Mesh(
-    new THREE.SphereGeometry(.09,12,12),
-    M(0xff4d45,.15)
-  );
-  knob.position.set(-.18,1.02,.57);
-  g.add(knob);
-
-  g.position.set(x,0,z);
+  g.position.z=z;
   scene.add(g);
   themeMoving.push(g);
 }
 
-function addBalloon(x,z,color){
+function addCeilingArc(z,i){
   const g=new THREE.Group();
-  const balloon=new THREE.Mesh(
-    new THREE.SphereGeometry(.28,16,16),
-    M(color,.12)
-  );
-  balloon.scale.y=1.2;
-  balloon.position.y=2.6;
-  g.add(balloon);
 
-  const string=new THREE.Mesh(
-    new THREE.CylinderGeometry(.008,.008,1.5,6),
-    M(0xffffff,.65)
+  const top=new THREE.Mesh(
+    new THREE.TorusGeometry(4.5,.08,8,36,Math.PI),
+    M(i%2===0?0x8cdfff:0xff88d3,.62)
   );
-  string.position.y=1.72;
-  g.add(string);
+  top.rotation.z=Math.PI;
+  top.position.y=5.1;
+  g.add(top);
 
-  g.position.set(x,0,z);
+  const strip=new THREE.Mesh(
+    new THREE.BoxGeometry(7.3,.06,.12),
+    M(0xffffff,.95)
+  );
+  strip.position.set(0,4.92,0);
+  g.add(strip);
+
+  g.position.z=z;
   scene.add(g);
   themeMoving.push(g);
 }
 
-function addStarDecor(x,z,color=0xffef43){
-  const s=new THREE.Mesh(
-    new THREE.OctahedronGeometry(.22),
-    M(color,.16)
+function addBanner(side,z,isRya=false){
+  const g=new THREE.Group();
+  const pole=new THREE.Mesh(
+    new THREE.CylinderGeometry(.035,.035,2.5,8),
+    M(0x263f77,.12)
   );
-  s.position.set(x,2.65,z);
-  scene.add(s);
-  themeMoving.push(s);
+  pole.position.set(side*3.35,3.12,0);
+  g.add(pole);
+
+  const panel=new THREE.Mesh(
+    new THREE.BoxGeometry(.75,1.7,.08),
+    M(isRya?0xff32b4:0x19c8ff,.48)
+  );
+  panel.position.set(side*3.35,3.05,.05);
+  g.add(panel);
+
+  const mark=new THREE.Mesh(
+    new THREE.OctahedronGeometry(.23),
+    M(0xffe342,.8)
+  );
+  mark.position.set(side*3.35,3.1,.13);
+  g.add(mark);
+
+  g.position.z=z;
+  scene.add(g);
+  themeMoving.push(g);
+}
+
+function addPlaylandPortal(z){
+  const g=new THREE.Group();
+
+  const left=new THREE.Mesh(new THREE.CylinderGeometry(.3,.38,5.0,16),M(0xff2fa9,.72));
+  left.position.set(-3.35,2.5,0);
+  g.add(left);
+
+  const right=new THREE.Mesh(new THREE.CylinderGeometry(.3,.38,5.0,16),M(0x16c9ff,.72));
+  right.position.set(3.35,2.5,0);
+  g.add(right);
+
+  const arch=new THREE.Mesh(
+    new THREE.TorusGeometry(3.35,.27,12,42,Math.PI),
+    M(0xffd83d,.85)
+  );
+  arch.rotation.z=Math.PI;
+  arch.position.y=4.75;
+  g.add(arch);
+
+  const glow=new THREE.Mesh(
+    new THREE.BoxGeometry(6.25,.12,.22),
+    M(0xffffff,1.15)
+  );
+  glow.position.set(0,4.72,.15);
+  g.add(glow);
+
+  g.position.z=z;
+  scene.add(g);
+  themeMoving.push(g);
+
+  makeTextSprite('PLAYLAND','PENDORYA AVM',z+.55,4.05,.86);
+}
+
+function addFloorGlow(z){
+  const g=new THREE.Group();
+
+  for(const x of [-1.55,0,1.55]){
+    const line=new THREE.Mesh(
+      new THREE.BoxGeometry(.055,.018,7.0),
+      M(x===0?0xffffff:(x<0?0x1bcaff:0xff36b3),.78)
+    );
+    line.position.set(x,.025,0);
+    g.add(line);
+  }
+
+  const edgeL=new THREE.Mesh(new THREE.BoxGeometry(.07,.02,7.0),M(0x1bcaff,.95));
+  edgeL.position.set(-2.58,.03,0);
+  g.add(edgeL);
+
+  const edgeR=new THREE.Mesh(new THREE.BoxGeometry(.07,.02,7.0),M(0xff36b3,.95));
+  edgeR.position.set(2.58,.03,0);
+  g.add(edgeR);
+
+  g.position.z=z;
+  scene.add(g);
+  themeMoving.push(g);
 }
 
 function buildPlaylandTheme(){
-  // Mall -> approach -> arcade -> Playland goal
-  addPlaylandSign('PLAYLAND',-38,3.5,.95);
-  addPlaylandSign('PLAYLAND',-82,3.7,1.05);
-  addPlaylandSign('PLAYLAND',-132,3.9,1.15);
+  // Clean premium mall corridor based on the approved Pendo & Rya reference art.
+  for(let i=0;i<25;i++){
+    const z=-10-i*7.2;
+    addFloorGlow(z);
+    addNeonRail(-1,z);
+    addNeonRail(1,z);
 
-  const arcadeZ=[-24,-32,-50,-58,-72,-92,-106,-120,-144,-160];
-  arcadeZ.forEach((z,i)=>{
-    addArcadeMachine(-4.15,z,i%2===0?0xff2f9c:0x24c8ff,i%2===0?0x24c8ff:0xffef43);
-    addArcadeMachine( 4.15,z,i%2===0?0x24c8ff:0xff2f9c,i%2===0?0xffef43:0x24c8ff);
-  });
-
-  for(let z=-18,i=0;z>-174;z-=13,i++){
-    addBalloon(-3.45,z,i%3===0?0xff2f9c:(i%3===1?0x24c8ff:0xffef43));
-    addBalloon( 3.45,z,i%3===0?0x24c8ff:(i%3===1?0xffef43:0xff2f9c));
-    addStarDecor(-2.65,z-4,i%2===0?0xffef43:0xffffff);
-    addStarDecor( 2.65,z-7,i%2===0?0xffffff:0xffef43);
+    if(i%2===0){
+      addShopFront(-1,z-1.2,i);
+      addShopFront(1,z-1.2,i+1);
+    }
+    if(i%4===0){
+      addPalm(-1,z-2.4);
+      addPalm(1,z-2.4);
+    }
+    if(i%3===0){
+      addCeilingArc(z-3.1,i);
+    }
+    if(i%5===1){
+      addBanner(-1,z-1.8,false);
+      addBanner(1,z-1.8,true);
+    }
   }
 
-  // Large final Playland portal
-  const gate=new THREE.Group();
-
-  const left=new THREE.Mesh(
-    new THREE.BoxGeometry(1.1,5.2,1.0),
-    M(0xff2f9c,.16)
-  );
-  left.position.set(-3.25,2.6,0);
-  gate.add(left);
-
-  const right=new THREE.Mesh(
-    new THREE.BoxGeometry(1.1,5.2,1.0),
-    M(0x24c8ff,.16)
-  );
-  right.position.set(3.25,2.6,0);
-  gate.add(right);
-
-  const top=new THREE.Mesh(
-    new THREE.BoxGeometry(7.6,1.15,1.0),
-    M(0xffef43,.14)
-  );
-  top.position.set(0,5.05,0);
-  gate.add(top);
-
-  const signBack=new THREE.Mesh(
-    new THREE.BoxGeometry(5.4,1.05,.35),
-    M(0xff2f9c,.12)
-  );
-  signBack.position.set(0,5.15,.65);
-  gate.add(signBack);
-
-  for(let i=0;i<8;i++){
-    const b=new THREE.Mesh(
-      new THREE.BoxGeometry(.4,.5,.16),
-      M(i%2===0?0xffffff:0x24c8ff,.06)
-    );
-    b.position.set(-1.72+i*.49,5.15,.9);
-    gate.add(b);
-  }
-
-  gate.position.set(0,0,-178);
-  scene.add(gate);
-  themeMoving.push(gate);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',-46,3.72,.72);
+  makeTextSprite('PLAYLAND','PENDORYA AVM',-104,3.82,.78);
+  addPlaylandPortal(-174);
 }
 
 buildPlaylandTheme();
@@ -721,7 +848,6 @@ function loop(t){
   for(const m of themeMoving){
     m.position.z+=speed*dt;
     if(m.position.z>12)m.position.z-=196;
-    if(m.rotation)m.rotation.y+=0.0008*dt;
   }
 
   for(let i=objects.length-1;i>=0;i--){
