@@ -297,8 +297,7 @@ function addBanner(side,z,isRya=false){
   g.add(pole);
 
   const panel=new THREE.Mesh(
-    new THREE.BoxGeometry(.75,1.7,.08),
-    M(isRya?0xff32b4:0x19c8ff,.48)
+    new THREE.BoxGeometry(.75,1.7,.08),    M(isRya?0xff32b4:0x19c8ff,.48)
   );
   panel.position.set(side*3.35,3.05,.05);
   g.add(panel);
@@ -500,105 +499,129 @@ if(i%3===0){
 
 
 
-// ===================== V12.2 STATIC ASSET ENVIRONMENT =====================
-const assetTexLoader=new THREE.TextureLoader();
-const staticAssets=[];
+// ===================== MODULAR PLAYLAND ENVIRONMENT =====================
 const movingFloorAssets=[];
-
-function tex(url){
-  const t=assetTexLoader.load(
-    url,
-    undefined,
-    undefined,
-    err=>console.warn('Asset yüklenemedi:',url,err)
-  );
-  if('colorSpace' in t)t.colorSpace=THREE.SRGBColorSpace;
-  return t;
-}
-
-const AT={
-  entrance:tex('/assets/playland_entrance.jpg'),
-  shops:tex('/assets/storefronts.jpg'),
-  rails:tex('/assets/railings.jpg'),
-  floor:tex('/assets/floor_wood.jpg'),
-  ceiling:tex('/assets/ceiling.jpg'),
-  plants:tex('/assets/plants.jpg'),
-  interiors:tex('/assets/interiors.jpg'),
-  lights:tex('/assets/lights.jpg'),
-  brand:tex('/assets/brand.jpg')
+const sharedGeometry={
+  segment:new THREE.BoxGeometry(9.2,.08,7.2),
+  lane:new THREE.BoxGeometry(.055,.025,7.05),
+  curb:new THREE.BoxGeometry(.16,.34,7.1),
+  cabinet:new THREE.BoxGeometry(.72,1.55,.82),
+  screen:new THREE.BoxGeometry(.58,.55,.035),
+  marquee:new THREE.BoxGeometry(.62,.22,.04),
+  column:new THREE.CylinderGeometry(.22,.28,3.8,10),
+  glow:new THREE.BoxGeometry(.08,.08,3.45),
+  ticket:new THREE.BoxGeometry(.78,1.2,.7),
+  balloon:new THREE.SphereGeometry(.23,10,8),
+  arch:new THREE.TorusGeometry(3.75,.09,8,28,Math.PI)
+};
+const playlandMaterials={
+  floor:M(0x251b4d,.03),
+  lane:M(0xffffff,.28),
+  cyan:M(0x20d8ff,.85),
+  pink:M(0xff45b5,.8),
+  purple:M(0x7a4dff,.5),
+  yellow:M(0xffdb3d,.65),
+  turquoise:M(0x26e0bd,.55),
+  dark:M(0x172653,.08),
+  white:M(0xf8fbff,.18)
 };
 
-function staticPlane(texture,w,h,x,y,z,rotY=0){
-  const mat=new THREE.MeshBasicMaterial({
-    map:texture,
-    side:THREE.DoubleSide
-  });
-  const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
-  p.position.set(x,y,z);
-  p.rotation.y=rotY;
-  scene.add(p);
-  staticAssets.push(p);
-  return p;
+function addBox(parent,geometry,material,x,y,z){
+  const mesh=new THREE.Mesh(geometry,material);
+  mesh.position.set(x,y,z);
+  parent.add(mesh);
+  return mesh;
 }
 
-function floorTile(z){
-  const mat=new THREE.MeshStandardMaterial({
-    map:AT.floor,
-    roughness:.62,
-    metalness:.01
-  });
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(6.2,6.0),mat);
-  floor.rotation.x=-Math.PI/2;
-  floor.position.set(0,.012,z);
-  scene.add(floor);
-  movingFloorAssets.push(floor);
+function addArcadeCabinet(parent,side,z,accent){
+  const x=side*4.0;
+  addBox(parent,sharedGeometry.cabinet,playlandMaterials.dark,x,.78,z);
+  const screen=addBox(parent,sharedGeometry.screen,accent,x-side*.375,1.0,z-.06);
+  screen.rotation.y=side*Math.PI/2;
+  const marquee=addBox(parent,sharedGeometry.marquee,playlandMaterials.yellow,x-side*.39,1.43,z-.06);
+  marquee.rotation.y=side*Math.PI/2;
 }
 
-function addStaticEnvironment(){
-  // Only floor tiles move with the runner.
-  for(let i=0;i<34;i++){
-    floorTile(-6-i*5.9);
+function addClawMachine(parent,side,z){
+  const x=side*3.95;
+  addBox(parent,sharedGeometry.ticket,playlandMaterials.purple,x,.62,z);
+  const glass=new THREE.Mesh(
+    new THREE.BoxGeometry(.68,.66,.6),
+    new THREE.MeshStandardMaterial({color:0xbff5ff,transparent:true,opacity:.42,roughness:.12})
+  );
+  glass.position.set(x,1.42,z);
+  parent.add(glass);
+  for(const offset of [-.2,0,.2]){
+    const prize=new THREE.Mesh(sharedGeometry.balloon,offset===0?playlandMaterials.yellow:playlandMaterials.pink);
+    prize.scale.setScalar(.55);
+    prize.position.set(x+offset,1.24,z);
+    parent.add(prize);
+  }
+}
+
+function addTicketKiosk(parent,side,z){
+  const x=side*3.95;
+  addBox(parent,sharedGeometry.ticket,playlandMaterials.turquoise,x,.6,z);
+  addBox(parent,new THREE.BoxGeometry(.5,.12,.04),playlandMaterials.yellow,x-side*.37,.78,z);
+}
+
+function addBalloonCluster(parent,side,z){
+  const x=side*4.1;
+  for(let i=0;i<3;i++){
+    const balloon=new THREE.Mesh(sharedGeometry.balloon,[playlandMaterials.pink,playlandMaterials.cyan,playlandMaterials.yellow][i]);
+    balloon.position.set(x+(i-1)*.28,2.35+(i%2)*.28,z);
+    parent.add(balloon);
+  }
+}
+
+function createEnvironmentSegment(variant,z){
+  const segment=new THREE.Group();
+  segment.name='EnvironmentSegment_'+String.fromCharCode(65+variant);
+  addBox(segment,sharedGeometry.segment,playlandMaterials.floor,0,.04,0);
+
+  for(const [x,material] of [[-2.32,playlandMaterials.cyan],[-.78,playlandMaterials.pink],[.78,playlandMaterials.yellow],[2.32,playlandMaterials.turquoise]]){
+    addBox(segment,sharedGeometry.lane,material,x,.095,0);
+  }
+  addBox(segment,sharedGeometry.curb,playlandMaterials.cyan,-3.25,.2,0);
+  addBox(segment,sharedGeometry.curb,playlandMaterials.pink,3.25,.2,0);
+
+  for(const side of [-1,1]){
+    addBox(segment,sharedGeometry.column,side<0?playlandMaterials.purple:playlandMaterials.turquoise,side*4.65,1.9,-2.8);
+    addBox(segment,sharedGeometry.glow,side<0?playlandMaterials.cyan:playlandMaterials.pink,side*4.42,1.9,-2.8);
+    if(variant===0){
+      addArcadeCabinet(segment,side,-.9,side<0?playlandMaterials.cyan:playlandMaterials.pink);
+      addArcadeCabinet(segment,side,1.25,side<0?playlandMaterials.yellow:playlandMaterials.turquoise);
+    }else if(variant===1){
+      addClawMachine(segment,side,-.7);
+      addTicketKiosk(segment,side,1.45);
+    }else{
+      addArcadeCabinet(segment,side,-1.1,playlandMaterials.purple);
+      addBalloonCluster(segment,side,1.3);
+    }
   }
 
-  // Fixed storefront walls: far to each side and never cross the track.
-  const wallZ=[-18,-36,-54,-72,-90,-108,-126,-144,-162];
-  wallZ.forEach((z,i)=>{
-    staticPlane(AT.shops,5.2,2.8,-5.0,1.6,z,-Math.PI/2);
-    staticPlane(AT.shops,5.2,2.8, 5.0,1.6,z, Math.PI/2);
-
-    staticPlane(AT.rails,2.0,.85,-3.95,.67,z+.8,-Math.PI/2);
-    staticPlane(AT.rails,2.0,.85, 3.95,.67,z+.8, Math.PI/2);
-
-    if(i%3===1){
-      staticPlane(AT.interiors,2.25,1.35,-4.55,2.25,z+1.0,-Math.PI/2);
-      staticPlane(AT.plants,1.0,1.0,3.55,.95,z+.6,0);
-    }
-
-    if(i%4===2){
-      staticPlane(AT.brand,1.1,.66,-3.45,2.45,z+.5,0);
-      staticPlane(AT.lights,.7,1.35,3.45,2.25,z+.5,0);
-    }
-  });
-
-  // Fixed ceiling image segments, high enough to never intersect camera.
-  for(const z of [-28,-58,-88,-118,-148]){
-    const c=staticPlane(AT.ceiling,7.5,2.25,0,5.3,z,0);
-    c.rotation.x=Math.PI/2;
+  if(variant===2){
+    const arch=new THREE.Mesh(sharedGeometry.arch,playlandMaterials.yellow);
+    arch.rotation.z=Math.PI;
+    arch.position.y=4.15;
+    segment.add(arch);
   }
 
-  // One distant Playland entrance. It remains static.
-  staticPlane(AT.entrance,8.8,5.9,0,2.95,-155,0);
+  segment.position.z=z;
+  scene.add(segment);
+  themeMoving.push(segment);
 }
-addStaticEnvironment();
+
+for(let i=0;i<26;i++)createEnvironmentSegment(i%3,-8-i*7.2);
+
 
 const loader=new GLTFLoader();
 
 const GLB={
   run:'public/models/Pendo-run.glb',
-  jump:'public/models/Pendo-jump.glb',
+  jump:'public/models/Pendo-Jump.glb',
   slide:'public/models/Pendo-slide.glb'
 };
-
 let player=new THREE.Group();
 let mixer=null;
 let action=null;
@@ -828,40 +851,45 @@ function spawnObject(){
   const laneX=lanes[(Math.random()*3)|0];
   let type,obj;
 
-  if(q<.52){
+  if(q<.58){
     type='coin';
-    obj=new THREE.Mesh(
-      new THREE.CylinderGeometry(.26,.26,.09,24),
-      M(0xffc928,.35)
-    );
-    obj.rotation.z=Math.PI/2;
+    obj=new THREE.Group();
+    const token=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.09,20),playlandMaterials.yellow);
+    token.rotation.z=Math.PI/2;
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.18,.035,6,16),playlandMaterials.white);
+    ring.rotation.y=Math.PI/2;
+    obj.add(token,ring);
     obj.position.set(laneX,1.15,-78);
-  }else if(q<.7){
+  }else if(q<.72){
     type='star';
-    obj=new THREE.Mesh(
-      new THREE.OctahedronGeometry(.29),
-      M(0xffef43,.45)
-    );
+    obj=new THREE.Mesh(new THREE.OctahedronGeometry(.31),playlandMaterials.yellow);
     obj.position.set(laneX,1.35,-78);
   }else if(q<.82){
     type='ramp';
-    obj=new THREE.Mesh(
-      new THREE.BoxGeometry(1.5,.25,2.3),
-      M(0x52dc38,.2)
-    );
-    obj.rotation.x=-.28;
+    obj=new THREE.Group();
+    const ramp=new THREE.Mesh(new THREE.BoxGeometry(1.5,.25,2.3),playlandMaterials.turquoise);
+    ramp.rotation.x=-.28;
+    obj.add(ramp);
+    addBox(obj,new THREE.BoxGeometry(1.05,.04,.12),playlandMaterials.yellow,0,.22,.35);
     obj.position.set(laneX,.18,-80);
   }else{
     type='barrier';
-    obj=new THREE.Mesh(
-      new THREE.BoxGeometry(1.45,1.35,.75),
-      M(0xff4d45,.15)
-    );
-    obj.position.set(laneX,.67,-80);
+    obj=new THREE.Group();
+    const styles=[
+      [playlandMaterials.pink,playlandMaterials.yellow],
+      [playlandMaterials.purple,playlandMaterials.cyan],
+      [playlandMaterials.turquoise,playlandMaterials.white]
+    ];
+    const style=styles[(Math.random()*styles.length)|0];
+    addBox(obj,new THREE.BoxGeometry(1.45,1.2,.72),style[0],0,.6,0);
+    addBox(obj,new THREE.BoxGeometry(1.05,.14,.78),style[1],0,1.08,0);
+    addBox(obj,new THREE.BoxGeometry(.22,.22,.78),style[1],-.42,.62,0);
+    addBox(obj,new THREE.BoxGeometry(.22,.22,.78),style[1],.42,.62,0);
+    obj.position.set(laneX,0,-80);
   }
 
   obj.userData.type=type;
-  obj.castShadow=true;
+  obj.traverse(child=>{if(child.isMesh)child.castShadow=true;});
   scene.add(obj);
   objects.push(obj);
 }
@@ -897,7 +925,6 @@ function reset(){
   loadMotion('run');
   updateHud();
 }
-
 function start(){
   reset();
 
@@ -1073,6 +1100,11 @@ function loop(t){
   for(const f of movingFloorAssets){
     f.position.z+=speed*dt;
     if(f.position.z>8)f.position.z-=200;
+  }
+
+  for(const segment of themeMoving){
+    segment.position.z+=speed*dt;
+    if(segment.position.z>9)segment.position.z-=187.2;
   }
 
   for(let i=objects.length-1;i>=0;i--){
